@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Builder Operacional</title>
+  <style>
+    :root {
+      --bg: #f6efe4;
+      --bg-2: #ead8c0;
+      --panel: rgba(255, 250, 243, 0.92);
+      --card: #fffdf9;
+      --text: #2f241a;
+      --muted: #6c5a49;
+      --border: #dcc5aa;
+      --accent: #6d3d1d;
+      --accent-2: #b17d37;
+      --accent-3: #efe0cb;
+      --ok: #2f6b4b;
+      --warn: #9a5c1d;
+      --shadow: 0 14px 36px rgba(91, 54, 22, 0.10);
+      --radius: 20px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(177,125,55,0.12), transparent 35%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+    }
+    .wrap { max-width: 1480px; margin: 0 auto; padding: 22px; }
+    .hero {
+      background: linear-gradient(135deg, #5a3117 0%, #7c4a25 55%, #c99550 100%);
+      color: #fff9f2;
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.07) 38%, transparent 64%);
+      pointer-events: none;
+    }
+    .hero h1, .hero p, .hero .quick { position: relative; z-index: 1; }
+    .hero h1 { margin: 0 0 10px; font-size: 32px; }
+    .hero p { margin: 0; line-height: 1.5; max-width: 980px; }
+    .quick { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .quick span {
+      background: rgba(255,255,255,0.16);
+      border: 1px solid rgba(255,255,255,0.14);
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .layout { display: grid; grid-template-columns: 1.08fr 0.92fr; gap: 20px; align-items: start; }
+    .stack { display: grid; gap: 18px; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(109,61,29,0.12);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+    }
+    .panel-head {
+      padding: 18px 20px;
+      background: linear-gradient(180deg, rgba(109,61,29,0.07), rgba(109,61,29,0.03));
+      border-bottom: 1px solid rgba(109,61,29,0.10);
+    }
+    .panel-head h2 { margin: 0 0 6px; font-size: 19px; }
+    .panel-head p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .panel-body { padding: 18px; display: grid; gap: 16px; }
+    .group {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .group h3 { margin: 0 0 12px; font-size: 15px; color: var(--accent); }
+    .field { display: grid; gap: 7px; margin-bottom: 12px; }
+    .field:last-child { margin-bottom: 0; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .triple { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    label { font-size: 13px; font-weight: 700; }
+    input[type="text"], textarea, select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fffdfa;
+      color: var(--text);
+      padding: 12px 14px;
+      font: inherit;
+    }
+    textarea { min-height: 94px; resize: vertical; line-height: 1.45; }
+    .small textarea { min-height: 74px; }
+    .large textarea { min-height: 180px; }
+    .tiny { color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 15px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease;
+    }
+    button:hover { transform: translateY(-1px); }
+    .primary { background: var(--accent); color: #fff; }
+    .secondary { background: #ead7be; color: var(--text); }
+    .ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .status { min-height: 18px; color: var(--ok); font-size: 13px; font-weight: 700; }
+    .warning {
+      color: var(--warn);
+      background: #fff5e8;
+      border: 1px dashed #dfc19a;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .preset-card, .recent-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: linear-gradient(180deg, #fff 0%, #fbf3ea 100%);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .preset-card h4, .recent-card h4 { margin: 0; color: var(--accent); font-size: 15px; }
+    .preset-card p, .recent-card p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .badge {
+      background: #f1dfc6;
+      color: #6f4524;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .mini-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .stat-card {
+      background: linear-gradient(180deg, #fff 0%, #fbf3ea 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .stat-card strong { display: block; font-size: 20px; color: var(--accent); }
+    .stat-card span { color: var(--muted); font-size: 12px; }
+    .recent-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    pre {
+      margin: 0;
+      min-height: 560px;
+      max-height: 76vh;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .empty-state { color: var(--muted); font-size: 13px; }
+    .danger { color: #fff; background: #8d4331; }
+    @media (max-width: 1200px) {
+      .layout { grid-template-columns: 1fr; }
+      .preset-grid, .row, .triple, .mini-grid { grid-template-columns: 1fr; }
+      pre { min-height: 360px; max-height: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>Prompt Builder Operacional</h1>
+      <p>Gerador web compartilhável para estruturar prompts como especificação operacional. Funciona em Windows, Mac e navegador moderno, com presets, importação de prompt completo, histórico local e exportação em JSON/Markdown.</p>
+      <div class="quick">
+        <span>Web-first</span>
+        <span>Mac / Windows</span>
+        <span>Importa prompt bruto</span>
+        <span>Limpa bullets e numeração</span>
+        <span>Recentes no navegador</span>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="stack">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Galeria de presets</h2>
+            <p>Comece por um modelo pronto e ajuste os campos para o caso real.</p>
+          </div>
+          <div class="panel-body">
+            <div class="preset-grid" id="presetGrid"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Importação rápida</h2>
+            <p>Cole um prompt completo estruturado e deixe o app separar automaticamente os blocos.</p>
+          </div>
+          <div class="panel-body">
+            <div class="group large">
+              <h3>Prompt bruto</h3>
+              <div class="field">
+                <label for="promptCompleto">Texto completo</label>
+                <textarea id="promptCompleto" placeholder="# Criar um dashboard...&#10;&#10;## Objetivo&#10;...&#10;&#10;## Regras&#10;- item 1"></textarea>
+                <div class="tiny">Pode colar com ##, bullets, numeração duplicada e pequenas inconsistências. O parser limpa o máximo possível.</div>
+              </div>
+              <div class="toolbar">
+                <button class="primary" id="importarPrompt">Importar prompt completo</button>
+                <button class="ghost" id="limparPromptBruto">Limpar caixa</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Campos do prompt</h2>
+            <p>Edite campo por campo. Nas listas, use uma linha por item sem bullet nem numeração.</p>
+          </div>
+          <div class="panel-body">
+            <div class="group">
+              <h3>1) Base</h3>
+              <div class="field">
+                <label for="titulo">Título / tarefa</label>
+                <input id="titulo" type="text" placeholder="Ex: Criar dashboard de compras para Natal" />
+              </div>
+              <div class="field">
+                <label for="objetivo">Objetivo</label>
+                <textarea id="objetivo"></textarea>
+              </div>
+              <div class="field">
+                <label for="contexto">Contexto</label>
+                <textarea id="contexto"></textarea>
+              </div>
+              <div class="field">
+                <label for="fonte">Fonte de verdade</label>
+                <textarea id="fonte"></textarea>
+              </div>
+            </div>
+
+            <div class="group">
+              <h3>2) Regras e fronteiras</h3>
+              <div class="field">
+                <label for="regras">Regras</label>
+                <textarea id="regras"></textarea>
+              </div>
+              <div class="row">
+                <div class="field small">
+                  <label for="naoFazer">Não fazer</label>
+                  <textarea id="naoFazer"></textarea>
+                </div>
+                <div class="field small">
+                  <label for="nuncaFazer">Nunca fazer</label>
+                  <textarea id="nuncaFazer"></textarea>
+                </div>
+              </div>
+              <div class="field small">
+                <label for="apenasSe">Fazer apenas se</label>
+                <textarea id="apenasSe"></textarea>
+              </div>
+            </div>
+
+            <div class="group">
+              <h3>3) Critérios operacionais</h3>
+              <div class="field">
+                <label for="condicionais">Condicionais</label>
+                <textarea id="condicionais"></textarea>
+              </div>
+              <div class="field small">
+                <label for="inegociaveis">Pontos inegociáveis</label>
+                <textarea id="inegociaveis"></textarea>
+              </div>
+              <div class="field">
+                <label for="verificacao">Verificação</label>
+                <textarea id="verificacao"></textarea>
+              </div>
+              <div class="field">
+                <label for="formato">Formato da resposta</label>
+                <textarea id="formato"></textarea>
+              </div>
+            </div>
+
+            <div class="group">
+              <h3>4) Controles</h3>
+              <div class="triple">
+                <div class="field">
+                  <label for="modo">Nível de estrutura</label>
+                  <select id="modo">
+                    <option value="padrao">Padrão completo</option>
+                    <option value="enxuto">Enxuto</option>
+                    <option value="critico">Crítico / alto risco</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="categoriaPrompt">Categoria</label>
+                  <select id="categoriaPrompt">
+                    <option value="geral">Geral</option>
+                    <option value="dashboard">Dashboard</option>
+                    <option value="analise">Análise</option>
+                    <option value="email">Email</option>
+                    <option value="automacao">Automação</option>
+                    <option value="nexus-sap">Nexus/SAP</option>
+                    <option value="relatorio">Relatório executivo</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="nomeArquivo">Nome-base do arquivo</label>
+                  <input id="nomeArquivo" type="text" placeholder="Ex: dashboard-compras-natal-2026" />
+                </div>
+              </div>
+              <div class="field small">
+                <label for="observacoes">Observações finais</label>
+                <textarea id="observacoes"></textarea>
+              </div>
+              <div class="toolbar">
+                <button class="primary" id="gerar">Gerar prompt</button>
+                <button class="secondary" id="salvarNoNavegador">Salvar em recentes</button>
+                <button class="secondary" id="salvarJson">Baixar .json</button>
+                <button class="secondary" id="baixarMarkdown">Baixar .md</button>
+                <button class="ghost" id="carregarJson">Carregar .json</button>
+                <button class="ghost" id="copiarPrompt">Copiar prompt</button>
+                <button class="ghost" id="limparTudo">Limpar tudo</button>
+              </div>
+              <input id="jsonFileInput" type="file" accept=".json,application/json" style="display:none;" />
+              <div class="warning">Os “recentes” ficam salvos no navegador do próprio usuário. Para compartilhar entre máquinas, use exportação/importação de .json ou publique este app na web.</div>
+              <div id="status" class="status"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Recentes deste navegador</h2>
+            <p>Rascunhos locais do navegador atual. Bom para reutilizar rápido no seu PC ou no Mac do Luis.</p>
+          </div>
+          <div class="panel-body">
+            <div class="toolbar">
+              <button class="ghost" id="atualizarRecentes">Atualizar lista</button>
+              <button class="danger" id="limparRecentes">Limpar recentes</button>
+            </div>
+            <div class="recent-grid" id="recentGrid"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Saída gerada</h2>
+            <p>Preview final do prompt já limpo e estruturado.</p>
+          </div>
+          <div class="panel-body">
+            <div class="mini-grid">
+              <div class="stat-card"><strong id="contLinhas">0</strong><span>linhas</span></div>
+              <div class="stat-card"><strong id="contSecoes">0</strong><span>seções preenchidas</span></div>
+            </div>
+            <pre id="saida">Preencha os campos, escolha um preset ou cole um prompt completo para começar.</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'prompt-builder-web-autosave-v1';
+    const RECENTS_KEY = 'prompt-builder-web-recents-v1';
+    const fieldIds = ['titulo','objetivo','contexto','fonte','regras','naoFazer','nuncaFazer','apenasSe','condicionais','inegociaveis','verificacao','formato','observacoes','modo','nomeArquivo','categoriaPrompt'];
+    const textIds = ['titulo','objetivo','contexto','fonte','regras','naoFazer','nuncaFazer','apenasSe','condicionais','inegociaveis','verificacao','formato','observacoes','nomeArquivo'];
+    const $ = (id) => document.getElementById(id);
+
+    const presets = [
+      { key: 'dashboard', title: 'Dashboard', desc: 'Painéis HTML com KPIs, filtros, status, risco e visão executiva-operacional.', tags: ['HTML','KPI','Visual'], data: { categoriaPrompt: 'dashboard', modo: 'critico', titulo: 'Criar um dashboard operacional', objetivo: 'Criar um dashboard em HTML para acompanhar evolução, status, riscos, pendências e indicadores principais do processo.', contexto: 'Usar dados confiáveis e organizar a visualização para tomada de decisão rápida, combinando visão executiva e operacional.', fonte: 'Fonte principal de dados do processo\nFonte secundária para validação\nDocumento/plano oficial do escopo', regras: 'Mostrar KPIs no topo\nSeparar itens por status\nDestacar riscos e pendências\nResponder em português com foco prático\nManter visual executivo-operacional', naoFazer: 'inventar métricas\ntrazer dados fora do escopo', nuncaFazer: 'alterar documentos de origem', apenasSe: 'gerar arquivos auxiliares se forem úteis para a análise', condicionais: 'Se faltar dado, sinalizar a lacuna\nSe houver conflito entre fontes, destacar antes de concluir\nSe houver item crítico, destacar em seção própria', inegociaveis: 'Não inventar dados\nDestacar riscos operacionais relevantes\nNão tratar validação parcial como conclusão completa', verificacao: 'Confirmar o que foi validado em cada fonte\nExplicitar eventuais lacunas ou conflitos', formato: 'Entregar arquivo HTML com paleta coerente, KPIs, filtros, badges de status, tabelas e resumo final.', observacoes: '' } },
+      { key: 'analise', title: 'Análise', desc: 'Investigação de divergências, interpretação de dados e síntese com evidências.', tags: ['Diagnóstico','Dados','Evidências'], data: { categoriaPrompt: 'analise', modo: 'padrao', titulo: 'Realizar uma análise operacional', objetivo: 'Analisar um problema, divergência ou cenário e entregar conclusões apoiadas em evidências.', contexto: 'A análise será usada para decisão prática. É importante separar fato, hipótese, conflito e pendência.', fonte: 'Base principal\nBase secundária\nRegra oficial do processo', regras: 'Responder em português\nDiferenciar fatos de hipóteses\nExplicar o racional usado\nPriorizar clareza operacional', naoFazer: 'concluir sem evidência\nestimar dado crítico ausente', nuncaFazer: 'inventar números', apenasSe: 'sugerir correção quando a causa estiver bem demonstrada', condicionais: 'Se faltar dado essencial, sinalizar\nSe houver conflito entre fontes, mostrar o conflito\nSe a hipótese não puder ser confirmada, dizer explicitamente', inegociaveis: 'Não inventar dados\nMostrar conflitos antes da conclusão\nSeparar claramente certeza de hipótese', verificacao: 'Listar o que foi verificado e o que ficou pendente', formato: 'Responder com Resumo, Evidências, Riscos, Pendências e Próximo passo recomendado.', observacoes: '' } },
+      { key: 'email', title: 'Email', desc: 'Rascunhos operacionais, formais ou sensíveis, com foco no tom correto e zero improviso factual.', tags: ['Comunicação','Formal','Ação'], data: { categoriaPrompt: 'email', modo: 'padrao', titulo: 'Redigir um email operacional', objetivo: 'Redigir um email claro, objetivo e adequado ao destinatário e ao contexto.', contexto: 'O texto será usado em comunicação de trabalho e precisa preservar clareza, tom e fatos confirmados.', fonte: 'Informações confirmadas\nContexto do processo\nFatos já validados', regras: 'Escrever em português\nSer direto\nNão exagerar no tom\nManter consistência factual', naoFazer: 'inventar confirmações\nprometer ações não aprovadas', nuncaFazer: 'enviar automaticamente sem validação do usuário', apenasSe: 'sugerir HTML quando isso melhorar a leitura', condicionais: 'Se faltar dado factual, deixar explícito\nSe o contexto for sensível, preferir formulação mais cuidadosa', inegociaveis: 'Não inventar status\nNão assumir aprovação implícita\nManter coerência com os fatos confirmados', verificacao: 'Conferir destinatário, objetivo, fatos citados e chamada para ação', formato: 'Entregar assunto sugerido e corpo do email prontos para revisão.', observacoes: '' } },
+      { key: 'automacao', title: 'Automação', desc: 'Prompt para tarefas com scripts, integrações, execuções e risco operacional.', tags: ['Scripts','Risco','Execução'], data: { categoriaPrompt: 'automacao', modo: 'critico', titulo: 'Executar uma automação operacional', objetivo: 'Executar ou propor uma automação com segurança, previsibilidade e critérios claros de verificação.', contexto: 'A tarefa pode alterar arquivos, integrar sistemas ou produzir impactos operacionais se executada incorretamente.', fonte: 'Script/base atual\nRegra oficial do processo\nAmbiente ou sistema de origem', regras: 'Priorizar segurança\nVerificar pré-requisitos\nRegistrar o que foi validado\nExplicar riscos antes de mudar algo relevante', naoFazer: 'alterar produção sem confirmação de escopo\npular verificação', nuncaFazer: 'inventar sucesso sem validar saída', apenasSe: 'executar alterações quando o escopo e o risco estiverem claros', condicionais: 'Se houver risco alto, avaliar alternativas antes\nSe a execução falhar, relatar causa e impacto\nSe a verificação não for possível, não considerar concluído', inegociaveis: 'Não tratar execução parcial como sucesso completo\nNão alterar sem escopo claro\nNão inventar validação', verificacao: 'Confirmar pré-requisitos, execução, saída produzida e evidência do resultado', formato: 'Responder com Plano, Riscos, Execução, Evidências e Resultado final.', observacoes: '' } },
+      { key: 'nexus-sap', title: 'Nexus / SAP', desc: 'Consultas, validações e análises ligadas a Nexus, SAP, RFC e regras de negócio.', tags: ['Nexus','SAP','Validação'], data: { categoriaPrompt: 'nexus-sap', modo: 'critico', titulo: 'Analisar processo entre Nexus e SAP', objetivo: 'Cruzar informações entre Nexus e SAP para validar status, cobertura, divergências ou pendências do processo.', contexto: 'É necessário separar claramente o papel de cada fonte e não misturar confirmação transacional com regra analítica.', fonte: 'SAP (RFC): confirmação transacional\nNexus servidor: regra de negócio e contexto analítico\nArquivo/plano do processo: escopo operacional', regras: 'Explicitar qual fonte confirmou cada conclusão\nSeparar divergências\nResponder em português\nPriorizar clareza operacional', naoFazer: 'alterar dados no SAP\ntrazer itens fora do escopo', nuncaFazer: 'inventar status ou cobertura', apenasSe: 'gerar arquivo auxiliar quando melhorar a leitura ou a rastreabilidade', condicionais: 'Se houver conflito entre SAP e Nexus, mostrar antes da conclusão\nSe faltar dado essencial, não estimar\nSe houver item crítico, destacar prioridade', inegociaveis: 'Não inventar dados\nNão concluir normalidade com conflito entre fontes\nExplicitar o que foi validado em cada sistema', verificacao: 'Confirmar status no SAP e lógica no Nexus\nListar lacunas e conflitos', formato: 'Responder com Resumo, Fonte por conclusão, Divergências, Riscos e Próximo passo.', observacoes: '' } },
+      { key: 'relatorio', title: 'Relatório executivo', desc: 'Síntese para gestão com visão clara, achados principais, riscos e ação recomendada.', tags: ['Resumo','Gestão','Decisão'], data: { categoriaPrompt: 'relatorio', modo: 'padrao', titulo: 'Montar um relatório executivo-operacional', objetivo: 'Organizar as principais informações do processo em um relatório claro para acompanhamento e tomada de decisão.', contexto: 'O conteúdo deve equilibrar visão executiva e detalhe operacional sem virar texto excessivo.', fonte: 'Base de dados principal\nPlanilha ou documento consolidado\nRegras oficiais do processo', regras: 'Responder em português\nUsar título Resumo\nDestacar riscos e pendências\nPriorizar leitura rápida', naoFazer: 'encher de contexto irrelevante\ntrazer detalhe sem impacto de decisão', nuncaFazer: 'inventar números', apenasSe: 'adicionar tabelas e quadros quando melhorarem a leitura', condicionais: 'Se faltar dado relevante, sinalizar\nSe houver divergência, mostrar antes da conclusão', inegociaveis: 'Não inventar dados\nDestacar riscos reais\nSeparar pendência de conclusão', verificacao: 'Conferir coerência entre resumo, números e recomendações', formato: 'Entregar Resumo, Indicadores principais, Riscos, Pendências e Próximo passo recomendado.', observacoes: '' } }
+    ];
+
+    function normalizeText(text) { return (text || '').replace(/\r/g, '').replace(/[“”]/g, '"').replace(/[‘’]/g, "'").trim(); }
+    function slugify(text) { return normalizeText(text).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'prompt-operacional'; }
+    function cleanListLine(line) {
+      return normalizeText(line)
+        .replace(/^[-*•]+\s*/, '')
+        .replace(/^\d+\.\s+\d+\.\s*/, '')
+        .replace(/^\d+[.)]\s*/, '')
+        .replace(/^[-*•]+\s*[-*•]+\s*/, '')
+        .trim();
+    }
+    function uniqueLines(lines) {
+      const seen = new Set();
+      const out = [];
+      for (const raw of lines) {
+        const line = cleanListLine(raw);
+        if (!line) continue;
+        const key = line.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(line);
+      }
+      return out;
+    }
+    function linesFromValue(value) { return uniqueLines(normalizeText(value).split('\n')); }
+    function listBlock(title, value, ordered = false) {
+      const lines = Array.isArray(value) ? uniqueLines(value) : linesFromValue(value);
+      if (!lines.length) return '';
+      const body = ordered ? lines.slice(0, 3).map((line, idx) => `${idx + 1}. ${line}`).join('\n') : lines.map(line => `- ${line}`).join('\n');
+      return `## ${title}\n${body}`;
+    }
+    function textBlock(title, value) {
+      const clean = normalizeText(value);
+      return clean ? `## ${title}\n${clean}` : '';
+    }
+    function getData() {
+      const data = {};
+      for (const id of fieldIds) data[id] = $(id).value || '';
+      return data;
+    }
+    function setData(data) {
+      for (const id of fieldIds) {
+        if ($(id)) $(id).value = data[id] || (id === 'modo' ? 'padrao' : id === 'categoriaPrompt' ? 'geral' : '');
+      }
+      if (!$('nomeArquivo').value.trim()) $('nomeArquivo').value = slugify(data.titulo || 'prompt-operacional');
+      render();
+      autosave();
+    }
+    function countSections(prompt) { return (prompt.match(/^##\s+/gm) || []).length; }
+
+    function buildPrompt(data = getData()) {
+      const condExtras = {
+        padrao: ['Se faltar dado essencial, não estime; sinalize claramente a lacuna.','Se houver conflito entre fontes, aponte o conflito antes de concluir.'],
+        enxuto: ['Se algo essencial estiver faltando, informe objetivamente antes de seguir.'],
+        critico: ['Antes de executar qualquer ação com impacto real, avalie riscos e a alternativa menos destrutiva.','Se a verificação não for possível, não trate execução parcial como sucesso completo.','Em caso de ambiguidade relevante, pare e destaque exatamente a decisão pendente.']
+      };
+      const conds = uniqueLines([...linesFromValue(data.condicionais), ...(condExtras[data.modo || 'padrao'] || [])]);
+      const parts = [
+        normalizeText(data.titulo) ? `# ${normalizeText(data.titulo)}` : '# Prompt operacional',
+        textBlock('Objetivo', data.objetivo),
+        textBlock('Contexto', data.contexto),
+        listBlock('Fonte de verdade', data.fonte),
+        listBlock('Regras', data.regras),
+        (() => {
+          const nf = linesFromValue(data.naoFazer);
+          const nnf = linesFromValue(data.nuncaFazer);
+          const aps = linesFromValue(data.apenasSe);
+          if (!nf.length && !nnf.length && !aps.length) return '';
+          return ['## Fronteiras', ...nf.map(line => `- Não fazer: ${line}`), ...nnf.map(line => `- Nunca fazer: ${line}`), ...aps.map(line => `- Fazer apenas se: ${line}`)].join('\n');
+        })(),
+        listBlock('Condicionais', conds),
+        listBlock('Pontos inegociáveis', data.inegociaveis, true),
+        listBlock('Verificação', data.verificacao),
+        textBlock('Formato da resposta', data.formato),
+        textBlock('Observações finais', data.observacoes)
+      ].filter(Boolean);
+      return parts.join('\n\n').trim();
+    }
+
+    function render() {
+      const prompt = buildPrompt();
+      $('saida').textContent = prompt || 'Preencha os campos, escolha um preset ou cole um prompt completo para começar.';
+      $('contLinhas').textContent = prompt ? prompt.split('\n').length : 0;
+      $('contSecoes').textContent = prompt ? countSections(prompt) : 0;
+      if (!$('nomeArquivo').value.trim() && $('titulo').value.trim()) $('nomeArquivo').value = slugify($('titulo').value.trim());
+    }
+
+    function showStatus(message, warn = false) {
+      const el = $('status');
+      el.textContent = message;
+      el.style.color = warn ? 'var(--warn)' : 'var(--ok)';
+      clearTimeout(showStatus.timer);
+      showStatus.timer = setTimeout(() => { el.textContent = ''; }, 2800);
+    }
+
+    function autosave() { localStorage.setItem(STORAGE_KEY, JSON.stringify(getData())); }
+    function restoreAutosave() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        setData({ modo: 'padrao', categoriaPrompt: 'geral', ...JSON.parse(raw) });
+      } catch (_) {}
+    }
+
+    function readRecents() {
+      try { return JSON.parse(localStorage.getItem(RECENTS_KEY) || '[]'); }
+      catch (_) { return []; }
+    }
+    function writeRecents(list) { localStorage.setItem(RECENTS_KEY, JSON.stringify(list)); }
+    function saveCurrentToRecents() {
+      const data = getData();
+      if (!normalizeText(data.titulo)) return showStatus('Defina pelo menos o título antes de salvar em recentes.', true);
+      const recents = readRecents();
+      const item = {
+        id: slugify((data.nomeArquivo || data.titulo) + '-' + Date.now()),
+        saved_at: new Date().toISOString(),
+        title: data.titulo,
+        category: data.categoriaPrompt || 'geral',
+        summary: normalizeText(data.objetivo).slice(0, 140),
+        data
+      };
+      const filtered = recents.filter(r => r.title !== item.title);
+      filtered.unshift(item);
+      writeRecents(filtered.slice(0, 12));
+      renderRecents();
+      showStatus('Prompt salvo em recentes deste navegador.');
+    }
+    function renderRecents() {
+      const recents = readRecents();
+      if (!recents.length) {
+        $('recentGrid').innerHTML = '<div class="empty-state">Nenhum prompt recente salvo neste navegador ainda.</div>';
+        return;
+      }
+      $('recentGrid').innerHTML = recents.map(item => `
+        <div class="recent-card">
+          <h4>${escapeHtml(item.title)}</h4>
+          <p>${escapeHtml(item.summary || 'Sem resumo')}</p>
+          <div class="badge-row">
+            <span class="badge">${escapeHtml(item.category || 'geral')}</span>
+            <span class="badge">${new Date(item.saved_at).toLocaleDateString('pt-BR')}</span>
+          </div>
+          <div class="toolbar">
+            <button class="primary" data-recent-open="${item.id}">Carregar</button>
+            <button class="ghost" data-recent-delete="${item.id}">Excluir</button>
+          </div>
+        </div>
+      `).join('');
+      document.querySelectorAll('[data-recent-open]').forEach(btn => btn.addEventListener('click', () => openRecent(btn.dataset.recentOpen)));
+      document.querySelectorAll('[data-recent-delete]').forEach(btn => btn.addEventListener('click', () => deleteRecent(btn.dataset.recentDelete)));
+    }
+    function openRecent(id) {
+      const item = readRecents().find(r => r.id === id);
+      if (!item) return;
+      setData({ modo: 'padrao', categoriaPrompt: 'geral', ...item.data });
+      showStatus('Prompt recente carregado.');
+    }
+    function deleteRecent(id) {
+      writeRecents(readRecents().filter(r => r.id !== id));
+      renderRecents();
+      showStatus('Prompt recente removido.');
+    }
+    function clearRecents() {
+      localStorage.removeItem(RECENTS_KEY);
+      renderRecents();
+      showStatus('Recentes limpos deste navegador.');
+    }
+
+    function splitSectionBody(body) { return uniqueLines(normalizeText(body).split('\n').map(line => line.trim()).filter(Boolean)); }
+    function extractSections(raw) {
+      const text = normalizeText(raw);
+      const titleMatch = text.match(/^#\s+(.+)$/m);
+      const title = titleMatch ? cleanListLine(titleMatch[1]) : '';
+      const regex = /^##\s+(.+)$/gm;
+      const hits = [];
+      let match;
+      while ((match = regex.exec(text)) !== null) hits.push({ name: normalizeText(match[1]).toLowerCase(), index: match.index, end: regex.lastIndex });
+      const sections = {};
+      for (let i = 0; i < hits.length; i++) {
+        const current = hits[i];
+        const next = hits[i + 1];
+        sections[current.name] = text.slice(current.end, next ? next.index : text.length).trim();
+      }
+      return { title, sections };
+    }
+    function loadFromCompletePrompt() {
+      const raw = $('promptCompleto').value;
+      if (!normalizeText(raw)) return showStatus('Cole um prompt completo antes de importar.', true);
+      const { title, sections } = extractSections(raw);
+      const data = getData();
+      data.titulo = title || data.titulo;
+      data.objetivo = normalizeText(sections['objetivo'] || '');
+      data.contexto = normalizeText(sections['contexto'] || '');
+      data.fonte = splitSectionBody(sections['fonte de verdade'] || '').join('\n');
+      data.regras = splitSectionBody(sections['regras'] || '').join('\n');
+      const fronteiras = splitSectionBody(sections['fronteiras'] || '');
+      data.naoFazer = fronteiras.filter(line => /^não fazer\s*:/i.test(line)).map(line => line.replace(/^não fazer\s*:/i, '').trim()).join('\n');
+      data.nuncaFazer = fronteiras.filter(line => /^nunca fazer\s*:/i.test(line)).map(line => line.replace(/^nunca fazer\s*:/i, '').trim()).join('\n');
+      data.apenasSe = fronteiras.filter(line => /^fazer apenas se\s*:/i.test(line)).map(line => line.replace(/^fazer apenas se\s*:/i, '').trim()).join('\n');
+      data.condicionais = splitSectionBody(sections['condicionais'] || '').join('\n');
+      data.inegociaveis = splitSectionBody(sections['pontos inegociáveis'] || sections['pontos inegociaveis'] || '').join('\n');
+      data.verificacao = splitSectionBody(sections['verificação'] || sections['verificacao'] || '').join('\n');
+      data.formato = normalizeText(sections['formato da resposta'] || '');
+      data.observacoes = normalizeText(sections['observações finais'] || sections['observacoes finais'] || '');
+      data.nomeArquivo = slugify(data.titulo || 'prompt-operacional');
+      setData(data);
+      showStatus('Prompt completo importado e limpo.');
+    }
+
+    function downloadFile(content, filename, mime = 'text/plain;charset=utf-8') {
+      const blob = new Blob([content], { type: mime });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+    function saveJson() {
+      const data = getData();
+      if (!normalizeText(data.titulo)) return showStatus('Defina pelo menos o título antes de baixar o JSON.', true);
+      const payload = JSON.stringify({ version: 1, saved_at: new Date().toISOString(), ...data }, null, 2);
+      downloadFile(payload, `${slugify(data.nomeArquivo || data.titulo)}.json`, 'application/json');
+      showStatus('JSON baixado.');
+    }
+    function saveMarkdown() {
+      const prompt = buildPrompt();
+      const data = getData();
+      downloadFile(prompt, `${slugify(data.nomeArquivo || data.titulo || 'prompt-operacional')}.md`, 'text/markdown;charset=utf-8');
+      showStatus('Markdown baixado.');
+    }
+    function loadJsonFile() { $('jsonFileInput').click(); }
+    function handleJsonFile(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          setData({ modo: 'padrao', categoriaPrompt: 'geral', ...parsed });
+          showStatus('JSON carregado para edição.');
+        } catch (_) {
+          showStatus('Não consegui ler esse JSON.', true);
+        }
+      };
+      reader.readAsText(file, 'utf-8');
+      event.target.value = '';
+    }
+    async function copyPrompt() {
+      const prompt = buildPrompt();
+      try { await navigator.clipboard.writeText(prompt); showStatus('Prompt copiado para a área de transferência.'); }
+      catch (_) { showStatus('Não consegui copiar automaticamente. Copie manualmente pelo painel da direita.', true); }
+    }
+    function clearAll() {
+      const blank = { modo: 'padrao', categoriaPrompt: 'geral' };
+      for (const id of textIds) blank[id] = '';
+      $('promptCompleto').value = '';
+      setData(blank);
+      localStorage.removeItem(STORAGE_KEY);
+      showStatus('Campos limpos.');
+    }
+    function applyPreset(key) {
+      const preset = presets.find(p => p.key === key);
+      if (!preset) return;
+      const data = { ...getData(), ...preset.data };
+      data.nomeArquivo = slugify(data.titulo || preset.title);
+      setData(data);
+      showStatus(`Preset "${preset.title}" carregado.`);
+    }
+    function renderPresets() {
+      $('presetGrid').innerHTML = presets.map(p => `
+        <div class="preset-card">
+          <h4>${escapeHtml(p.title)}</h4>
+          <p>${escapeHtml(p.desc)}</p>
+          <div class="badge-row">${p.tags.map(tag => `<span class="badge">${escapeHtml(tag)}</span>`).join('')}</div>
+          <div class="toolbar"><button class="primary" type="button" data-preset="${p.key}">Usar preset</button></div>
+        </div>
+      `).join('');
+      document.querySelectorAll('[data-preset]').forEach(btn => btn.addEventListener('click', () => applyPreset(btn.dataset.preset)));
+    }
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, s => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[s]));
+    }
+
+    fieldIds.forEach(id => {
+      const el = $(id);
+      if (!el) return;
+      const eventName = el.tagName === 'SELECT' ? 'change' : 'input';
+      el.addEventListener(eventName, () => { render(); autosave(); });
+    });
+    $('gerar').addEventListener('click', () => { render(); autosave(); showStatus('Prompt atualizado.'); });
+    $('importarPrompt').addEventListener('click', loadFromCompletePrompt);
+    $('limparPromptBruto').addEventListener('click', () => { $('promptCompleto').value = ''; showStatus('Caixa de importação limpa.'); });
+    $('salvarNoNavegador').addEventListener('click', saveCurrentToRecents);
+    $('salvarJson').addEventListener('click', saveJson);
+    $('baixarMarkdown').addEventListener('click', saveMarkdown);
+    $('carregarJson').addEventListener('click', loadJsonFile);
+    $('jsonFileInput').addEventListener('change', handleJsonFile);
+    $('copiarPrompt').addEventListener('click', copyPrompt);
+    $('limparTudo').addEventListener('click', clearAll);
+    $('atualizarRecentes').addEventListener('click', renderRecents);
+    $('limparRecentes').addEventListener('click', clearRecents);
+
+    renderPresets();
+    restoreAutosave();
+    renderRecents();
+    render();
+  </script>
+</body>
+</html>
