@@ -104,6 +104,10 @@
     .large textarea { min-height: 180px; }
     .tiny { color: var(--muted); font-size: 12px; line-height: 1.4; }
     .toolbar { display: flex; flex-wrap: wrap; gap: 10px; }
+    .toolbar.output-actions {
+      justify-content: flex-end;
+      margin-top: 2px;
+    }
     button {
       border: 0;
       border-radius: 12px;
@@ -115,6 +119,13 @@
     }
     button:hover { transform: translateY(-1px); }
     .primary { background: var(--accent); color: #fff; }
+    .copy-cta {
+      background: linear-gradient(135deg, #6d3d1d 0%, #b17d37 100%);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(109, 61, 29, 0.18);
+      min-width: 190px;
+    }
+    .copy-cta:hover { box-shadow: 0 14px 28px rgba(109, 61, 29, 0.24); }
     .secondary { background: #ead7be; color: var(--text); }
     .ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
     .status { min-height: 18px; color: var(--ok); font-size: 13px; font-weight: 700; }
@@ -352,13 +363,13 @@
       <div class="stack">
         <div class="panel">
           <div class="panel-head">
-            <h2>Recentes deste navegador</h2>
-            <p>Rascunhos locais do navegador atual. Bom para reutilizar rápido no seu PC ou no Mac do Luis.</p>
+            <h2>Rascunhos salvos neste navegador</h2>
+            <p>Itens salvos localmente neste navegador para retomada rápida neste dispositivo.</p>
           </div>
           <div class="panel-body">
             <div class="toolbar">
-              <button class="ghost" id="atualizarRecentes">Atualizar lista</button>
-              <button class="danger" id="limparRecentes">Limpar recentes</button>
+              <button class="ghost" id="atualizarRecentes">Atualizar rascunhos</button>
+              <button class="danger" id="limparRecentes">Apagar rascunhos locais</button>
             </div>
             <div class="recent-grid" id="recentGrid"></div>
           </div>
@@ -375,6 +386,9 @@
               <div class="stat-card"><strong id="contSecoes">0</strong><span>seções preenchidas</span></div>
             </div>
             <pre id="saida">Preencha os campos, escolha um preset ou cole um prompt completo para começar.</pre>
+            <div class="toolbar output-actions">
+              <button class="copy-cta" id="copiarPromptSaida">Copiar prompt</button>
+            </div>
           </div>
         </div>
       </div>
@@ -526,7 +540,7 @@
     function renderRecents() {
       const recents = readRecents();
       if (!recents.length) {
-        $('recentGrid').innerHTML = '<div class="empty-state">Nenhum prompt recente salvo neste navegador ainda.</div>';
+        $('recentGrid').innerHTML = '<div class="empty-state">Nenhum rascunho salvo neste navegador ainda. Use um preset, cole um prompt completo ou importe um .json para começar.</div>';
         return;
       }
       $('recentGrid').innerHTML = recents.map(item => `
@@ -693,6 +707,7 @@
     $('carregarJson').addEventListener('click', loadJsonFile);
     $('jsonFileInput').addEventListener('change', handleJsonFile);
     $('copiarPrompt').addEventListener('click', copyPrompt);
+    $('copiarPromptSaida').addEventListener('click', copyPrompt);
     $('limparTudo').addEventListener('click', clearAll);
     $('atualizarRecentes').addEventListener('click', renderRecents);
     $('limparRecentes').addEventListener('click', clearRecents);
